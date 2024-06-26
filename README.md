@@ -15,6 +15,9 @@ A container is a bundle of Application, Application libraries required to run yo
 
 ![Screenshot 2023-02-07 at 7 18 10 PM](https://user-images.githubusercontent.com/43399466/217262726-7cabcb5b-074d-45cc-950e-84f7119e7162.png)
 
+In the diagram shown, the virtual machine on the right side has a complete guest operating system, making it very heavy. In contrast, the container on the left does not have an operating system. It only has a base image or a base operating system, using critical components like the kernel from the host operating system. The container also includes unique elements necessary for creating isolation, which are part of the container's architecture or Docker image.
+
+Containers are lightweight because they do not include a full operating system. Instead, they contain the application, its dependencies, and minimal system dependencies, utilizing the host OS kernel. This logical isolation prevents security breaches. Without logical isolation, a hacker could potentially access all containers in a cluster. Logical isolation is achieved using system dependencies, not the kernel.
 
 
 ## Containers vs Virtual Machine 
@@ -25,11 +28,9 @@ Containers and virtual machines are both technologies used to isolate applicatio
 
     2. Portability: Containers are designed to be portable and can run on any system with a compatible host operating system. VMs are less portable as they need a compatible hypervisor to run.
 
-    3. Security: VMs provide a higher level of security as each VM has its own operating system and can be isolated from the host and other VMs. Containers provide less isolation, as they share the host operating system.
-
-   4.  Management: Managing containers is typically easier than managing VMs, as containers are designed to be lightweight and fast-moving.
-
-
+    3. Security: VMs provide a higher level of security as each VM has its own operating system and can be isolated from the host and other VMs. Containers provide less isolation, as they share the host operating system.  
+    
+    4.  Management: Managing containers is typically easier than managing VMs, as containers are designed to be lightweight and fast-moving.
 
 ## Why are containers light weight ?
 
@@ -43,6 +44,14 @@ Below is the screenshot of official ubuntu base image which you can use for your
 
 
 To provide a better picture of files and folders that containers base images have and files and folders that containers use from host operating system (not 100 percent accurate -> varies from base image to base image). Refer below.
+
+This image is provided by Ubuntu itself and serves as a container base image. The Ubuntu container base image includes essential files and folders. Any application implemented on this base image will utilize these files and folders from the official Ubuntu Docker image. Meanwhile, other elements such as kernel-related components, networking stack, and file system will be sourced from the host operating system or kernel.
+
+To illustrate, the official Ubuntu Docker image is just 28.16 MB on the Linux AMD64 platform. In comparison, a typical Ubuntu virtual machine image can be as large as 2.3 GB. Although you can reduce the size of both virtual and Docker images, the out-of-the-box difference is significant, with the Docker image being nearly 100 times smaller. This is a major advantage of Docker.
+
+With Docker, instead of running a single virtual machine, you can run 10, 20, or even 30 to 40 containers on the same virtual machine, depending on the resources your containers consume from the host operating system. In cases where containers use substantial resources from the host OS, or if you predefine resource usage for containers (e.g., starting with 256 MB), this scalability might be limited. However, the key advantage of containers is that if they are not running, they allow other containers to utilize resources from the kernel or host OS. This flexibility enables the operation of multiple containers based on their resource usage.
+
+In contrast, virtual machines each have their own guest operating system. The kernel resources used by one virtual machine cannot be shared with another. This isolation prevents virtual machine B from accessing kernel-related resources of virtual machine A, creating a resource usage barrier not present in containers. 
 
 
 
@@ -63,7 +72,8 @@ To provide a better picture of files and folders that containers base images hav
 
     /root: is the home directory of the root user.
 ```
-
+These basic folders form a logical isolation from one container to another container that means a container cannot share these files and folders with another container if a container is
+sharing these files and folders that means you are compromising the security of your container or the other container is compromising the security with yourself so that's why these files these files and folders are not used from the kernel and they are basically part of your container image or your container base image.
 
 
 ### Files and Folders that containers use from host operating system
@@ -80,6 +90,7 @@ To provide a better picture of files and folders that containers base images hav
     Control groups (cgroups): Docker containers use cgroups to limit and control the amount of resources, such as CPU, memory, and I/O, that a container can access.
     
 ```
+These are the files we can use from your host operating system and a logical isolation can be created by using this files and folders.
 
 It's important to note that while a container uses resources from the host operating system, it is still isolated from the host and other containers, so changes to the container do not affect the host or other containers.
 
@@ -107,9 +118,20 @@ In simple words, you can understand as `containerization is a concept or technol
 
 The above picture, clearly indicates that Docker Deamon is brain of Docker. If Docker Deamon is killed, stops working for some reasons, Docker is brain dead :p (sarcasm intended).
 
+As a client using the Docker client, you can execute commands received by the Docker daemon. The Docker daemon is a process installed when you install Docker; it is essentially the heart of Docker. When you run Docker CLI commands, they are received and executed by the Docker daemon. This daemon creates Docker images and containers and can also push Docker images to your Docker registry. 
+
+The Docker daemon is crucial for Docker's functionality. If the Docker daemon goes down, Docker will stop functioning, and your containers will cease to work because they rely on the daemon to run. 
+
+The architecture involves a client, the Docker CLI, which users interact with to execute Docker commands. These commands are received by the Docker daemon, which then performs the requested actions. For example:
+- `docker build` creates a Docker image.
+- `docker run` creates a Docker container.
+- `docker pull` pulls containers from a registry.
+
+Registries can be private or public, and the Docker daemon knows where to pull or push images based on the account details you provide. To use Docker Hub, you need to create an account, and the Docker daemon will use this information to manage your images.
+
 ### Docker LifeCycle 
 
-We can use the above Image as reference to understand the lifecycle of Docker.
+We can use the below Image as reference to understand the lifecycle of Docker.
 
 There are three important things,
 
@@ -119,6 +141,33 @@ There are three important things,
 
 ![Screenshot 2023-02-08 at 4 32 13 PM](https://user-images.githubusercontent.com/43399466/217511949-81f897b2-70ee-41d1-b229-38d0572c54c7.png)
 
+Understanding the life cycle of Docker is crucial since the concept of containers is inherently complex. Once you grasp how containers work, using the Docker platform to manage them becomes straightforward. Docker essentially serves as a platform that allows you to create Docker images and containers. You can think of it as a CLI tool or a daemon service that processes your requests.
+
+ ### The flow that happens in docker:
+
+1. **Writing a Dockerfile**:
+    - A Dockerfile is a set of instructions for Docker to follow. 
+    - For example, you might instruct Docker to use a base image like Ubuntu, add your source code to this image, install necessary libraries and dependencies (e.g., using `npm` for Node.js or `pip` for Python), and set up commands to run your application (e.g., starting a local server).
+
+2. **Building a Docker Image**:
+    - Using the `docker build` command, you submit the Dockerfile to the Docker daemon.
+    - The Docker daemon then creates a Docker image based on the instructions in the Dockerfile.
+    - A Docker image is similar to a snapshot in a virtual machine.
+
+3. **Running a Docker Container**:
+    - Once the Docker image is created, you can use the `docker run` command to create a Docker container from this image.
+    - The Docker container is the running instance of your image, containing all necessary system dependencies, application libraries, and the application itself.
+
+4. **Sharing and Executing Docker Containers**:
+    - Docker containers can be shared with anyone using a public registry.
+    - The recipient can download the Docker container and run the application without needing to install any dependencies, as everything is included in the container.
+
+5. **Efficiency and Simplification**:
+    - Docker significantly simplifies the deployment process. Instead of manually setting up an environment (e.g., creating an EC2 instance, running the application, exposing ports), Docker automates these steps through the Dockerfile and the Docker daemon.
+    - This automation improves efficiency by reducing the number of manual actions required to deploy an application.
+
+6. **End of Lifecycle**:
+    - The Docker lifecycle typically ends when the container is no longer needed. You can tear down the container or create new containers as needed.
 
 
 ### Understanding the terminology (Inspired from Docker Docs)
