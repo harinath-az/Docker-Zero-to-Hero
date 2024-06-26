@@ -363,6 +363,13 @@ You need to change the username accoringly in the below command
 ```
 docker build -t abhishekf5/my-first-docker-image:latest .
 ```
+When building a Docker image, you can use a Dockerfile in the current directory without always specifying `-f Dockerfile`. You can simply use `.` to indicate the current directory. Additionally, it's good practice to tag your image using the `-t` flag. This makes it easier to manage and identify your images among potentially hundreds on your machine, laptop, or EC2 instance. Without a tag, your image will be assigned a Docker image ID, which can be difficult to remember. Here's an example command:
+
+```bash
+docker build -t my_image:latest .
+```
+
+In this command, `-t my_image:latest` tags the image as `my_image` with the tag `latest`. This makes it easier to find and use later.
 
 Output of the above command
 
